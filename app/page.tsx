@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
-import { Moon, Sun } from "lucide-react";
 
 interface Item {
   id: number;
@@ -47,7 +46,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
   const [challengeCompleted, setChallengeCompleted] = useState<boolean>(false);
   const [challengeFailed, setChallengeFailed] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(120);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [isDarkMode] = useState<boolean>(true);
 
   const handleDrop = (bin: keyof Bins, itemId: number): void => {
     const item = availableItems.find((i) => i.id === itemId);
@@ -195,7 +194,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
                 🎉 Congratulations!
               </AlertTitle>
               <AlertDescription className="text-green-50">
-                You've successfully sorted all items!
+                You have successfully sorted all items!
               </AlertDescription>
             </Alert>
           )}
@@ -214,7 +213,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
           {!challengeCompleted && !challengeFailed && timeLeft === 0 && (
             <Alert className="mt-8 bg-yellow-500 dark:bg-yellow-600 text-white border-none">
               <AlertTitle className="text-xl flex items-center gap-2">
-                ⏰ Time's Up!
+                ⏰ Time is Up!
               </AlertTitle>
               <AlertDescription className="text-yellow-50">
                 The CAPTCHA has expired. Please try again.
