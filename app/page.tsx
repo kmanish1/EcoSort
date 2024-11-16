@@ -3,6 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "./components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
+import {
+  onChallengeResponse,
+  onChallengeExpired,
+  onChallengeError,
+} from "@gotcha-widget/lib";
 
 interface Item {
   id: number;
@@ -48,33 +53,40 @@ const EcoSortCaptchaPremium: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(120);
   const [isDarkMode] = useState<boolean>(true);
 
-  const handleDrop = (bin: keyof Bins, itemId: number): void => {
-    const item = availableItems.find((i) => i.id === itemId);
+  const handleDrop = async (bin: keyof Bins, itemId: number): Promise<void> => {
+    try {
+      const item = availableItems.find((i) => i.id === itemId);
 
-    if (item) {
-      if (item.type === bin) {
-        setBins((prev) => ({
-          ...prev,
-          [bin]: [...prev[bin], item],
-        }));
+      if (item) {
+        if (item.type === bin) {
+          setBins((prev) => ({
+            ...prev,
+            [bin]: [...prev[bin], item],
+          }));
 
-        setAvailableItems((prev) => prev.filter((i) => i.id !== itemId));
+          setAvailableItems((prev) => prev.filter((i) => i.id !== itemId));
 
-        const updatedAvailableItems = availableItems.filter(
-          (i) => i.id !== itemId
-        );
-        if (updatedAvailableItems.length === 0) {
-          setChallengeCompleted(true);
+          const updatedAvailableItems = availableItems.filter(
+            (i) => i.id !== itemId
+          );
+          if (updatedAvailableItems.length === 0) {
+            setChallengeCompleted(true);
+            setTimeLeft(0);
+            await onChallengeResponse(true); // Notify success
+          }
+        } else {
+          setBinErrors((prev) => ({
+            ...prev,
+            [bin]: true,
+          }));
+          setChallengeFailed(true);
           setTimeLeft(0);
+          await onChallengeResponse(false); // Notify failure
         }
-      } else {
-        setBinErrors((prev) => ({
-          ...prev,
-          [bin]: true,
-        }));
-        setChallengeFailed(true);
-        setTimeLeft(0);
       }
+    } catch (error) {
+      await onChallengeError(); // Notify error
+      console.error("An error occurred:", error);
     }
   };
 
@@ -85,6 +97,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
           clearInterval(timer);
           if (!challengeCompleted) {
             setChallengeFailed(true);
+            onChallengeExpired(); // Notify expiration
           }
           return 0;
         }
@@ -123,6 +136,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
         </CardHeader>
 
         <CardContent className="p-6">
+          {/* Available Items */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {availableItems.map((item) => (
               <div
@@ -143,6 +157,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
             ))}
           </div>
 
+          {/* Bins */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {(["recycling", "compost", "trash"] as const).map((bin) => (
               <div
@@ -188,6 +203,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
             ))}
           </div>
 
+          {/* Alerts */}
           {challengeCompleted && (
             <Alert className="mt-8 bg-green-500 dark:bg-green-600 text-white border-none">
               <AlertTitle className="text-xl flex items-center gap-2">
@@ -216,7 +232,7 @@ const EcoSortCaptchaPremium: React.FC = () => {
                 ⏰ Time is Up!
               </AlertTitle>
               <AlertDescription className="text-yellow-50">
-                The CAPTCHA has expired. Please try again.
+                Please attempt the CAPTCHA again.
               </AlertDescription>
             </Alert>
           )}
